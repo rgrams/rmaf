@@ -99,6 +99,10 @@ vec3 = {
 			return math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
 		end,
 
+		len2 = function(v)
+			return v.x * v.x + v.y * v.y + v.z * v.z
+		end,
+
 		normalize = function(v, out)
 			out = out or v
 			local len = v:length()
@@ -300,6 +304,13 @@ quat = {
 
 		length = function(q)
 			return math.sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w)
+		end,
+
+
+		reverse = function(q, out) -- The conjugate.
+			out = out or q
+			out.x, out.y, out.z, out.w = -q.x, -q.y, -q.z, q.w
+			return out
 		end,
 
 		normalize = function(q, out)
