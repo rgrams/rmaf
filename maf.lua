@@ -4,6 +4,7 @@
 
 local ffi = type(jit) == 'table' and jit.status() and require 'ffi'
 local vec3, quat
+local sin, cos, acos, sqrt, PI = math.sin, math.cos, math.acos, math.sqrt, math.pi
 
 local forward
 local vtmp1
@@ -100,7 +101,7 @@ vec3 = {
 		end,
 
 		length = function(v)
-			return math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+			return sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
 		end,
 
 		len2 = function(v)
@@ -118,7 +119,7 @@ vec3 = {
 		end,
 
 		angle = function(v, u)
-			return math.acos(v:dot(u) / (v:length() + u:length()))
+			return acos(v:dot(u) / (v:length() + u:length()))
 		end,
 
 		dot = function(v, u)
@@ -215,8 +216,8 @@ quat = {
 
 		setAngleAxis = function(q, angle, x, y, z)
 			if vec3.isvec3(x) then x, y, z = x.x, x.y, x.z end
-			local s = math.sin(angle * .5)
-			local c = math.cos(angle * .5)
+			local s = sin(angle * .5)
+			local c = cos(angle * .5)
 			q.x = x * s
 			q.y = y * s
 			q.z = z * s
@@ -226,9 +227,9 @@ quat = {
 
 		getAngleAxis = function(q)
 			if q.w > 1 or q.w < -1 then q:normalize() end
-			local s = math.sqrt(1 - q.w * q.w)
+			local s = sqrt(1 - q.w * q.w)
 			s = s < .0001 and 1 or 1 / s
-			return 2 * math.acos(q.w), q.x * s, q.y * s, q.z * s
+			return 2 * acos(q.w), q.x * s, q.y * s, q.z * s
 		end,
 
 		between = function(u, v)
@@ -248,7 +249,7 @@ quat = {
 					vtmp1:cross(u)
 				end
 				vtmp1:normalize()
-				return q:setAngleAxis(math.pi, vtmp1)
+				return q:setAngleAxis(PI, vtmp1)
 			end
 
 			q.x, q.y, q.z = u.x, u.y, u.z
@@ -306,7 +307,7 @@ quat = {
 		end,
 
 		length = function(q)
-			return math.sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w)
+			return sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w)
 		end,
 
 
@@ -342,10 +343,10 @@ quat = {
 				return q:lerp(r, t, out)
 			end
 
-			local theta = math.acos(dot)
-			q:scale(math.sin((1 - t) * theta), out)
-			r:scale(math.sin(t * theta), qtmp1)
-			return out:add(qtmp1):scale(1 / math.sin(theta))
+			local theta = acos(dot)
+			q:scale(sin((1 - t) * theta), out)
+			r:scale(sin(t * theta), qtmp1)
+			return out:add(qtmp1):scale(1 / sin(theta))
 		end
 	}
 }
