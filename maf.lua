@@ -163,7 +163,7 @@ vec3 = {
 
 quat = {
 	__call = function(_, x, y, z, w)
-		return setmetatable({ x = x, y = y, z = z, w = w }, quat)
+		return setmetatable({ x = x or 0, y = y or 0, z = z or 0, w = w or 1 }, quat)
 	end,
 
 	__tostring = function(q)
@@ -336,18 +336,32 @@ quat = {
 	}
 }
 
+-- Don't want __tostring or operator methods on the class itself.
+local vec3_mt = { __call = vec3.__call, __index = vec3.__index }
+local quat_mt = { __call = quat.__call, __index = quat.__index }
+
 if ffi then
 	ffi.cdef [[
 	typedef struct { double x, y, z; } vec3;
 	typedef struct { double x, y, z, w; } quat;
 	]]
-
-	vec3 = ffi.metatype('vec3', vec3)
-	quat = ffi.metatype('quat', quat)
-else
-	setmetatable(vec3, vec3)
-	setmetatable(quat, quat)
+	-- FFI structs -do not- use the __call method, so we must keep the modules as lua tables.
+	local new_vec3 = ffi.typeof('vec3')
+	local new_quat = ffi.typeof('quat')
+	vec3.new = new_vec3 -- More efficient.
+	quat.new = new_quat -- More efficient, if you don't mind the default w=0.
+	vec3_mt.__call = function(_, x, y, z)
+		return new_vec3(x or 0, y or 0, z or 0)
+	end
+	quat_mt.__call = function(_, x, y, z, w)
+		return new_quat(x or 0, y or 0, z or 0, w or 1)
+	end
+	ffi.metatype('vec3', vec3)
+	ffi.metatype('quat', quat)
 end
+
+setmetatable(vec3, vec3_mt)
+setmetatable(quat, quat_mt)
 
 forward = vec3(0, 0, -1)
 vtmp1 = vec3()
