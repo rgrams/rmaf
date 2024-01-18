@@ -10,6 +10,10 @@ local vtmp1
 local vtmp2
 local qtmp1
 
+local function cross(ax, ay, az, bx, by, bz)
+	return ay*bz - az*by, az*bx - ax*bz, ax*by - ay*bx
+end
+
 vec3 = {
 	__call = function(_, x, y, z)
 		return setmetatable({ x = x or 0, y = y or 0, z = z or 0 }, vec3)
@@ -123,10 +127,7 @@ vec3 = {
 
 		cross = function(v, u, out)
 			out = out or v
-			local a, b, c = v.x, v.y, v.z
-			out.x = b * u.z - c * u.y
-			out.y = c * u.x - a * u.z
-			out.z = a * u.y - b * u.x
+			out.x, out.y, out.z = cross(v.x, v.y, v.z, u.x, u.y, u.z)
 			return out
 		end,
 
@@ -150,18 +151,20 @@ vec3 = {
 		end,
 
 		rotate = function(v, q, out)
+			-- From: https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Used_methods
+			-- Formula: out = v + 2r × (r × v + w*v)    (r == vector part of quat)
 			out = out or v
-			local u, c, o = vtmp1, vtmp2, out
-			u.x, u.y, u.z = q.x, q.y, q.z
-			o.x, o.y, o.z = v.x, v.y, v.z
-			u:cross(v, c)
-			local uu = u:dot(u)
-			local uv = u:dot(v)
-			o:scale(q.w * q.w - uu)
-			u:scale(2 * uv)
-			c:scale(2 * q.w)
-			return o:add(u:add(c))
-		end
+			-- Localize stuff:
+			local vx, vy, vz = v.x, v.y, v.z
+			local rx, ry, rz, w = q.x, q.y, q.z, q.w
+			-- Compute part in parentheses:
+			local rcrossvx, rcrossvy, rcrossvz = cross(rx,ry,rz, vx,vy,vz)
+			local _x, _y, _z = rcrossvx + vx*w, rcrossvy + vy*w, rcrossvz + vz*w
+			_x, _y, _z = cross(2*rx,2*ry,2*rz, _x,_y,_z)
+			-- Put it all together:
+			out.x, out.y, out.z = vx + _x, vy + _y, vz + _z
+			return out
+		end,
 	}
 }
 
