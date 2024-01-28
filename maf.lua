@@ -140,6 +140,15 @@ vec3 = {
 			return out
 		end,
 
+		lerpdt = function(v, u, rate, dt, out)
+			out = out or v
+			local k = (1 - rate)^dt -- Flip rate so it's the expected direction (0 = no change).
+			out.x = u.x + (v.x - u.x) * k
+			out.y = u.y + (v.y - u.y) * k
+			out.z = u.z + (v.z - u.z) * k
+			return out
+		end,
+
 		project = function(v, u, out)
 			out = out or v
 			local unorm = vtmp1
@@ -208,6 +217,27 @@ quat = {
 			q.z = z
 			q.w = w
 			return q
+		end,
+
+		fromX = function(angle, out)
+			out = out or quat()
+			out.x, out.y, out.z = 1 * sin(angle * 0.5), 0, 0
+			out.w = cos(angle * 0.5)
+			return out
+		end,
+
+		fromY = function(angle, out)
+			out = out or quat()
+			out.x, out.y, out.z = 0, 1 * sin(angle * 0.5), 0
+			out.w = cos(angle * 0.5)
+			return out
+		end,
+
+		fromZ = function(angle, out)
+			out = out or quat()
+			out.x, out.y, out.z = 0, 0, 1 * sin(angle * 0.5)
+			out.w = cos(angle * 0.5)
+			return out
 		end,
 
 		fromAngleAxis = function(angle, x, y, z)
