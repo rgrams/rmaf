@@ -17,7 +17,7 @@ end
 
 vec3 = {
 	__call = function(_, x, y, z)
-		return setmetatable({ x = x or 0, y = y or 0, z = z or 0 }, vec3)
+		return setmetatable({ x = x or 0, y = y or x or 0, z = z or x or 0 }, vec3)
 	end,
 
 	__tostring = function(v)
@@ -55,8 +55,8 @@ vec3 = {
 		set = function(v, x, y, z)
 			if vec3.isvec3(x) then x, y, z = x.x, x.y, x.z end
 			v.x = x
-			v.y = y
-			v.z = z
+			v.y = y or x
+			v.z = z or x
 			return v
 		end,
 
@@ -423,7 +423,7 @@ if ffi then
 	vec3.new = new_vec3 -- More efficient.
 	quat.new = new_quat -- More efficient, if you don't mind the default w=0.
 	vec3_mt.__call = function(_, x, y, z)
-		return new_vec3(x or 0, y or 0, z or 0)
+		return new_vec3(x or 0, y or x or 0, z or x or 0)
 	end
 	quat_mt.__call = function(_, x, y, z, w)
 		return new_quat(x or 0, y or 0, z or 0, w or 1)
