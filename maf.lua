@@ -244,6 +244,34 @@ quat = {
 			return quat():setAngleAxis(angle, x, y, z)
 		end,
 
+		fromMatrix = function(m, out)
+			out = out or quat()
+			local m11, m12, m13 = m[1], m[5], m[ 9]
+			local m21, m22, m23 = m[2], m[6], m[10]
+			local m31, m32, m33 = m[3], m[7], m[11]
+			local t, x, y, z, w
+			if m33 < 0 then
+				if m11 > m22 then
+					t = 2 + m11 - m22 - m33
+					x, y, z, w = t, m12+m21, m31+m13, m23-m32
+				else
+					t = 2 - m11 + m22 - m33
+					x, y, z, w = m12+m21, t, m23+m32, m31-m13
+				end
+			else
+				if (m11 < -m22) then
+					t = 2 - m11 - m22 + m33
+					x, y, z, w = m31+m13, m23+m32, t, m12-m21
+				else
+					t = 2 + m11 + m22 + m33
+					x, y, z, w = m23-m32, m31-m13, m12-m21, t
+				end
+			end
+			local k = 0.5/sqrt(t)
+			out.x, out.y, out.z, out.w = x*k, y*k, z*k, w*k
+			return out
+		end,
+
 		setAngleAxis = function(q, angle, x, y, z)
 			if vec3.isvec3(x) then x, y, z = x.x, x.y, x.z end
 			local s = sin(angle * .5)
@@ -339,7 +367,6 @@ quat = {
 		length = function(q)
 			return sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w)
 		end,
-
 
 		reverse = function(q, out) -- The conjugate.
 			out = out or q
