@@ -9,6 +9,7 @@ local ffi = type(jit) == 'table' and jit.status() and require 'ffi'
 
 local folder = (...):gsub("matrix4$", "")
 local vec3 = require(folder.."maf").vec3
+local quat = require(folder.."maf").quat
 
 local matrix, matrix_mt
 
@@ -62,6 +63,19 @@ local function det3(a, b, c, d, e, f, g, h, i)
 	return a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g)
 end
 
+-- Use one row of the cofactor matrix to calculate the determinant.
+local function determinant(M)
+	local a, b, c, d = M[1], M[2], M[3], M[4]
+	local e, f, g, h = M[5], M[6], M[7], M[8]
+	local i, j, k, l = M[9], M[10], M[11], M[12]
+	local m, n, o, p = M[13], M[14], M[15], M[16]
+	local inv_1  =  det3(f,g,h, j,k,l, n,o,p)
+	local inv_5  = -det3(e,g,h, i,k,l, m,o,p)
+	local inv_9  =  det3(e,f,h, i,j,l, m,n,p)
+	local inv_13 = -det3(e,f,g, i,j,k, m,n,o)
+	return a*inv_1 + b*inv_5 + c*inv_9 + d*inv_13
+end
+
 local function fromQuat(q)
 	local qx, qy, qz, qw = q.x, q.y, q.z, q.w
 	local qx2, qy2, qz2 = qx*qx, qy*qy, qz*qz
@@ -111,6 +125,8 @@ local function __call(_, a, b, ...)
 	end
 end
 
+local tmp = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+
 matrix_mt = {
 	__tostring = function(M)  return _printFormat:format(_unpack(M))  end,
 	__mul = function(M, x)
@@ -146,6 +162,27 @@ matrix_mt = {
 		fromQuat = function(q, out)
 			return set(out or new(), fromQuat(q))
 		end,
+		decompose = function(m, outPos, outRot, outScale)
+			outPos = outPos or vec3()
+			outRot = outRot or quat()
+			outScale = outScale or vec3()
+			-- Position
+			outPos:set(m[4], m[8], m[12])
+			-- Scale
+			local sx = lenv3(m[1], m[5], m[9])
+			local sy = lenv3(m[2], m[6], m[10])
+			local sz = lenv3(m[3], m[7], m[11])
+			outScale:set(sx, sy, sz)
+			-- Rotation
+			set(tmp,
+				m[1]/sx, m[5]/sx,  m[9]/sx,  0,
+				m[2]/sy, m[6]/sy,  m[10]/sy,  0,
+				m[3]/sz, m[7]/sz,  m[11]/sz, 0,
+				0,       0,        0,        0
+			)
+			quat.fromMatrix(tmp, outRot)
+			return outPos, outRot, outScale
+		end,
 		orthographicSym = function(width, height, near, far, out) -- Symmetrical x and y.
 			local rt, top = width/2, height/2
 			return set(out or new(),
@@ -174,6 +211,18 @@ matrix_mt = {
 				zx, zy, zz, -dotv3(zx, zy, zz, eye.x, eye.y, eye.z),
 				 0,  0,  0,  1
 			)
+		end,
+		transpose = function (a, out)
+			out = out or a
+			local _1,  _2,  _3,  _4  = a[1],  a[2],  a[3],  a[4]
+			local _5,  _6,  _7,  _8  = a[5],  a[6],  a[7],  a[8]
+			local _9,  _10, _11, _12 = a[9],  a[10], a[11], a[12]
+			local _13, _14, _15, _16 = a[13], a[14], a[15], a[16]
+			out[1], out[5], out[9],  out[13] = _1,  _2,  _3,  _4
+			out[2], out[6], out[10], out[14] = _5,  _6,  _7,  _8
+			out[3], out[7], out[11], out[15] = _9,  _10, _11, _12
+			out[4], out[8], out[12], out[16] = _13, _14, _15, _16
+			return out
 		end,
 		mult = function(a, b, out)
 			out = out or new()
@@ -254,6 +303,7 @@ matrix_mt = {
 
 			return inv
 		end,
+		determinant = determinant
 	}
 }
 
