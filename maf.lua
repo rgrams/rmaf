@@ -40,9 +40,8 @@ vec3 = {
 	__len = function(v) return v:length() end,
 
 	__index = {
-		isvec3 = function(x)
-			return ffi and ffi.istype('vec3', x) or getmetatable(x) == vec3
-		end,
+		isvec3 = ffi and function(x)  return ffi.istype('vec3', x)  end or
+			function(x)  return getmetatable(x) == vec3  end,
 
 		clone = function(v)
 			return vec3(v.x, v.y, v.z)
@@ -198,9 +197,8 @@ quat = {
 	__len = function(q) return q:length() end,
 
 	__index = {
-		isquat = function(x)
-			return ffi and ffi.istype('quat', x) or getmetatable(x) == quat
-		end,
+		isquat = ffi and function(x)  return ffi.istype('quat', x)  end or
+			function(x)  return getmetatable(x) == quat  end,
 
 		clone = function(q)
 			return quat(q.x, q.y, q.z, q.w)
