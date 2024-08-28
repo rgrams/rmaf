@@ -145,6 +145,12 @@ matrix_mt = {
 		end,
 		identity = identity,
 		unpack = _unpack,
+		getPos = function(m)
+			return m[4], m[8], m[12]
+		end,
+		setPos = function(m, x, y, z)
+			m[4], m[8], m[12] = x, y, z
+		end,
 		fromTransform = function(pos, rot, scale, out)
 			out = out or new()
 			local sx, sy, sz = scale.x, scale.y, scale.z
